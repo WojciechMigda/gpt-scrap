@@ -59,6 +59,10 @@ def work(con, sleep, author):
                 ad.decompose()
             for ad in body.find_all('div', {'class': 'embed-frame'}):
                 ad.decompose()
+            for ad in body.find_all('p', {'class': 'video-embed'}):
+                ad.decompose()
+            for ad in body.find_all('span', ['flex-video']):
+                ad.decompose()
 
             for jslink in body.find_all('a', {'class': 'js_link'}):
                 jslink.unwrap()
