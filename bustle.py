@@ -158,7 +158,8 @@ CREATE TABLE IF NOT EXISTS "corpus" (
     `Title` TEXT,
     `Subtitle`  TEXT,
     `URL`   TEXT NOT NULL,
-    `Document`  TEXT NOT NULL
+    `Document`  TEXT NOT NULL,
+    `Tags`   TEXT
 );
 """)
         work(con, sleep, author)
