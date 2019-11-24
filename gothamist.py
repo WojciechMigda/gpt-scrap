@@ -16,7 +16,7 @@ def work(con, sleep, author):
     page_sz = 12
 
     while True:
-        url = 'https://cms.prod.nypr.digital/api/v2/pages/?type=news.ArticlePage&fields=publication_date,url,title,body&order=-publication_date&show_on_index_listing=true&author_slug={}&limit={}&offset={}'.format(author, page_sz, page_ix)
+        url = 'https://cms.prod.nypr.digital/api/v2/pages/?type=news.ArticlePage&fields=publication_date,url,title,body,tags&order=-publication_date&show_on_index_listing=true&author_slug={}&limit={}&offset={}'.format(author, page_sz, page_ix)
         page_ix += page_sz
 
         print(url)
@@ -32,11 +32,32 @@ def work(con, sleep, author):
             ts = article['publication_date']
             permalink = article['url']
             title = article['title']
+            #tags = ' '.join(t['slug'] for t in article['tags'])
+            tags = ','.join(t['name'] for t in article['tags'])
 
             body = '\n'.join(p['value']['code'] for p in article['body'])
+            body = body.replace('<href', '<a href')
+            body = body.replace('</href', '</a href')
+            body = body.replace('<http:', '<a')
+            body = body.replace('</http:', '</a')
+
             body = BS(body, 'html.parser')
 
             for el in body('a'):
+                el.unwrap()
+            for el in body('blockquote.given'):
+                el.unwrap()
+            for el in body('enter'):
+                el.unwrap()
+            for el in body('center'):
+                el.unwrap()
+            for el in body('cente'):
+                el.unwrap()
+            for el in body('em(nell'):
+                el.unwrap()
+            for el in body('strong<'):
+                el.unwrap()
+            for el in body('em<[citation'):
                 el.unwrap()
 
             for el in body('iframe'):
@@ -48,6 +69,8 @@ def work(con, sleep, author):
             for el in body('form'):
                 el.decompose()
             for el in body('object'):
+                el.decompose()
+            for el in body('href'):
                 el.decompose()
             for el in body('blockquote', {'class': 'twitter-tweet'}):
                 el.decompose()
@@ -91,6 +114,8 @@ def work(con, sleep, author):
             print(ts)
             print('>>> Title')
             print(title)
+            print('>>> Tags')
+            print(tags)
             print('>>> URL')
             print(permalink)
             print('>>> Document')
@@ -99,7 +124,7 @@ def work(con, sleep, author):
 
             source = 'Gothamist'
 
-            con.execute("insert into corpus (Source, Date, HasQuotes, Title, URL, Document) values (?, ?, ?, ?, ?, ?)", (source, ts, 1, title, permalink, str(body)))
+            con.execute("insert into corpus (Source, Date, HasQuotes, Title, URL, Document, Tags) values (?, ?, ?, ?, ?, ?, ?)", (source, ts, 1, title, permalink, str(body), tags))
             con.execute('commit;')
 
         time.sleep(sleep)
@@ -127,7 +152,8 @@ CREATE TABLE IF NOT EXISTS "corpus" (
     `Title` TEXT,
     `Subtitle`  TEXT,
     `URL`   TEXT NOT NULL,
-    `Document`  TEXT NOT NULL
+    `Document`  TEXT NOT NULL,
+    `Tags`   TEXT
 );
 """)
         work(con, sleep, author)
